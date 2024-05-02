@@ -1,0 +1,21 @@
+{
+  "name": "fivem-websocket-client",
+  "version": "1.0",
+  "description": "fivem websocket client",
+  "private": true,
+  "scripts": {
+    "build": "webpack"
+  },
+  "author": "Noah Wilderom",
+  "devDependencies": {
+    "@babel/core": "^7.1.0",
+    "@babel/preset-env": "^7.1.0",
+    "babel-loader": "^8.0.2",
+    "webpack": "^4.19.1",
+    "webpack-cli": "^3.1.1"
+  },
+  "dependencies": {
+    "uuid": "^9.0",
+    "ws": "^8.17.0"
+  }
+}
