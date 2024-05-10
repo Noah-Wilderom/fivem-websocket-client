@@ -1,73 +1,94 @@
-
 const { v4: uuidv4 } = require("uuid")
 const { WebSocket } = require("ws")
 
-let callbacks = []
-let connections = []
+class Connection
+{
 
-const Connect = (data) => {
-    let id = uuidv4()
-    let url = `${data.schema}://${data.ip}:${data.port}`
-    const socket = new WebSocket(url);
-    console.log(url)
+    #id 
+    #url
+    #socket
+    #isOpen = false
+    #callbacks = []
 
-    socket.addEventListener('open', (event) => {
-        if (! connections[id]) { return; }
-
-        callbacks[`${id}-OnOpen`]()
-    })
-
-    socket.addEventListener('message', (event) => {
-        if (! connections[id]) { return; }
-
-        callbacks[`${id}-OnMessage`](event.data)
-    })
-
-    socket.addEventListener('close', (event) => {
-        if (! connections[id]) { return; }
-
-        callbacks[`${id}-OnClose`]()
-    })
-
-    socket.addEventListener('error', (error) => {
-        console.log(error)
-        if (! connections[id]) { return; }
-
-        callbacks[`${id}-OnError`](error)
-    })
-
-    connections[id] = socket
-
-    return id
-}
-
-const Send = (id, data) => {
-    if (connections[id])
+    constructor(data)
     {
-        connections[id].send(JSON.stringify(data))
+        this.#id = uuidv4()
+        this.#url = `${data.schema}://${data.ip}:${data.port}` 
+        this.#socket = new WebSocket(this.#url)
+        this.#registerSocket()
+    }
+
+    #registerSocket()
+    {
+        this.#socket.addEventListener('open', (event) => {
+            if (this.#callbacks['OnOpen'])
+            {
+                this.#isOpen = true
+                this.#callbacks['OnOpen']()
+            }
+        })
+
+        this.#socket.addEventListener('message', (event) => {
+            if (this.#callbacks['OnMessage'])
+            {
+                this.#callbacks['OnMessage'](event.data)
+            }
+        })
+
+        this.#socket.addEventListener('close', (event) => {
+            if (this.#callbacks['OnClose'])
+            {
+                this.#isOpen = false
+                this.#callbacks['OnClose']()
+            }
+        })
+
+        this.#socket.addEventListener('error', (error) => {
+            if (this.#callbacks['OnError'])
+            {
+                this.#callbacks['OnError'](error)
+            }
+        })
+    }
+
+    IsOpen()
+    {
+        return this.#isOpen
+    }
+
+    Id()
+    {
+        return this.#id
+    }
+
+    OnOpen(callback)
+    {
+        this.#callbacks['OnOpen'] = callback
+    }
+
+    OnClose(callback)
+    {
+        this.#callbacks['OnClose'] = callback
+    }
+
+    OnError(callback)
+    {
+        this.#callbacks['OnError'] = callback
+    }
+
+    OnMessage(callback)
+    {
+        this.#callbacks['OnMessage'] = callback
+    }
+
+    Send(data)
+    {
+        this.#socket.send(JSON.stringify(data))
     }
 }
 
-const OnOpen = (websocketConnectionId, callback) => {
-    callbacks[`${websocketConnectionId}-OnOpen`] = callback
+const Connect = (data) => {
+    return new Connection(data)
 }
-
-const OnClose = (websocketConnectionId, callback) => {
-    callbacks[`${websocketConnectionId}-OnClose`] = callback
-}
-
-const OnError = (websocketConnectionId, callback) => {
-    callbacks[`${websocketConnectionId}-OnError`] = callback
-}
-
-const OnMessage = (websocketConnectionId, callback) => {
-    callbacks[`${websocketConnectionId}-OnMessage`] = callback
-}
-
 
 global.exports('Connect', Connect)
-global.exports('Send', Send)
-global.exports('OnOpen', OnOpen)
-global.exports('OnClose', OnClose)
-global.exports('OnError', OnError)
-global.exports('OnMessage', OnMessage)

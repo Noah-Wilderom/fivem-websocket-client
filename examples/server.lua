@@ -19,40 +19,43 @@ local function printTable(table, indent)
 end
 
 function TestWebsockets()
-    local id = exports['websocket-client']:Connect({
+    local conn = exports['websocket-client']:Connect({
         schema = "ws",
         ip = "localhost",
         port = "3000"
     })
 
-    print(id)
-
-    exports['websocket-client']:OnOpen(id, function()
+    conn.OnOpen(function() 
         print("websocket client connection is open")
     end)
 
-    exports['websocket-client']:OnClose(id, function()
+    conn.OnClose(function()
         print('websocket client connection is closed')
     end)
 
-    exports['websocket-client']:OnError(id, function(error)
-        print('websocket client connection has error', #error)
-        printTable(error)
+    conn.OnError(function (err)
+        print('websocket client error', err)
     end)
 
-    exports['websocket-client']:OnMessage(id, function(data)
-        print("websocket client message received", data)
-        printTable(data)
+    conn.OnMessage(function(data)
+        print('websocket client recv message', data)
     end)
-end
 
-RegisterCommand("sendws", function(source, args, rawCommand)
-    exports['websocket-client']:Send(args[1], {
+    conn.Send({
         data = {
             message = "hello"
         }
     })
-end, false)
+
+end
+
+-- RegisterCommand("sendws", function(source, args, rawCommand)
+--     exports['websocket-client']:Send(args[1], {
+--         data = {
+--             message = "hello"
+--         }
+--     })
+-- end, false)
 
 AddEventHandler('onResourceStart', function(resourceName)
     TestWebsockets()
